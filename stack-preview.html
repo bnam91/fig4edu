@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Stack Preview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #888; overflow: hidden; font-family: Arial, sans-serif; }
+    canvas { display: block; }
+
+    /* 우측 사이드바 */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 220px;
+      height: 100vh;
+      background: rgba(22, 22, 22, 0.92);
+      backdrop-filter: blur(12px);
+      border-left: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      user-select: none;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 16px;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .sidebar-section {
+      padding: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sidebar-section-title {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .prop-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .prop-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .prop-val {
+      color: #fff;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .prop-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.2);
+      outline: none;
+      cursor: pointer;
+    }
+    .prop-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    /* 플로팅 패널 */
+    .panel-ui {
+      position: fixed;
+      top: 20px;
+      right: 240px;
+      background: rgba(30, 30, 30, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 160px;
+      color: #fff;
+      user-select: none;
+      cursor: default;
+    }
+
+    .panel-title {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+.btn-front {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 13px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+      text-align: center;
+    }
+    .btn-front:hover { background: rgba(255,255,255,0.2); }
+    .btn-front:active { background: rgba(255,255,255,0.3); }
+
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .zoom-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .zoom-value {
+      color: #fff;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .zoom-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.2);
+      outline: none;
+      cursor: pointer;
+    }
+    .zoom-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .zoom-btns {
+      display: flex;
+      gap: 6px;
+    }
+    .zoom-btn {
+      flex: 1;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 16px;
+      padding: 4px 0;
+      cursor: pointer;
+      transition: background 0.15s;
+      text-align: center;
+      line-height: 1;
+    }
+    .zoom-btn:hover { background: rgba(255,255,255,0.2); }
+
+    .hint {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.4);
+      font-size: 12px;
+      letter-spacing: 1px;
+      pointer-events: none;
+    }
+
+    .layer-info {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: none; /* 기본은 통과 */
+    }
+
+    /* 체크박스 행만 클릭 가능 */
+    .layer-row, .layer-section-head {
+      pointer-events: auto;
+    }
+
+    .layer-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.85);
+      font-family: Arial, sans-serif;
+    }
+
+    .layer-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .layer-label {
+      color: rgba(255,255,255,0.4);
+      font-size: 11px;
+      margin-bottom: 2px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-family: Arial, sans-serif;
+    }
+
+    .layer-cb {
+      width: 11px;
+      height: 11px;
+      margin-right: 5px;
+      cursor: pointer;
+      flex-shrink: 0;
+      accent-color: #60a5fa;
+    }
+
+    .layer-section-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.85);
+      font-family: Arial, sans-serif;
+      margin-top: 4px;
+    }
+
+    .layer-row {
+      display: flex;
+      align-items: center;
+      font-family: Arial, sans-serif;
+      gap: 0;
+      line-height: 1.6;
+    }
+
+    .layer-row span {
+      white-space: nowrap;
+    }
+
+    .layer-row.selected {
+      background: rgba(96,165,250,0.18);
+      border-radius: 4px;
+    }
+
+    .prop-divider {
+      height: 1px;
+      background: rgba(255,255,255,0.07);
+      margin: 2px 0;
+    }
+
+    .prop-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .prop-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .prop-item-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.5px;
+    }
+
+    .prop-item-val {
+      font-size: 12px;
+      color: #fff;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px;
+      padding: 3px 6px;
+    }
+
+    .prop-none {
+      font-size: 11px;
+      color: rgba(255,255,255,0.25);
+      text-align: center;
+      padding: 8px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 우측 편집 사이드바 -->
+  <div class="sidebar">
+    <div class="sidebar-header">Edit Panel</div>
+
+    <div class="sidebar-section" id="propsSection">
+      <div class="sidebar-section-title">Properties</div>
+      <div id="propsContent"><div class="prop-none">선택된 레이어 없음</div></div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,0.8);cursor:pointer;">
+          <input type="checkbox" id="padBlockToggle" checked style="accent-color:#60a5fa;cursor:pointer;">
+          패딩 블록 표시
+        </label>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Layer 1 — Frame</div>
+      <div class="prop-row">
+        <div class="prop-label">
+          <span>좌우 패딩</span>
+          <span class="prop-val" id="paddingVal">0px</span>
+        </div>
+        <input type="range" class="prop-slider" id="paddingSlider" min="0" max="180" value="0">
+      </div>
+      <div class="prop-row">
+        <div class="prop-label">
+          <span>상하 패딩</span>
+          <span class="prop-val" id="paddingVVal">0px</span>
+        </div>
+        <input type="range" class="prop-slider" id="paddingVSlider" min="0" max="300" value="0">
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Layer 1 — Frame</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,0.8);cursor:pointer;">
+        <input type="checkbox" id="gridToggle" style="accent-color:#60a5fa;cursor:pointer;">
+        격자 표시
+      </label>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Grid 1×2 — Row</div>
+      <div class="prop-row">
+        <div class="prop-label">
+          <span>좌우 패딩</span>
+          <span class="prop-val" id="gridPadVal">0px</span>
+        </div>
+        <input type="range" class="prop-slider" id="gridPadSlider" min="0" max="200" value="0">
+      </div>
+      <div class="prop-row">
+        <div class="prop-label">
+          <span>셀 간격 (갭)</span>
+          <span class="prop-val" id="gridGapVal">0px</span>
+        </div>
+        <input type="range" class="prop-slider" id="gridGapSlider" min="0" max="160" value="0">
+      </div>
+    </div>
+  </div>
+
+  <!-- 플로팅 패널 -->
+  <div class="panel-ui" id="panelUI">
+    <div class="panel-title">View Controls</div>
+
+    <div style="display:flex;gap:5px;">
+      <button class="btn-front" id="btnFront" style="flex:1;padding:8px 4px;font-size:11px;">⊙ 정면</button>
+      <button class="btn-front" id="btnTop"   style="flex:1;padding:8px 4px;font-size:11px;">↑ 탑뷰</button>
+      <button class="btn-front" id="btnSide"  style="flex:1;padding:8px 4px;font-size:11px;">→ 사이드</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="zoom-label">
+      <span>배율</span>
+      <span class="zoom-value" id="zoomVal">90%</span>
+    </div>
+    <input type="range" class="zoom-slider" id="zoomSlider" min="20" max="300" value="90">
+    <div class="zoom-btns">
+      <button class="zoom-btn" id="zoomOut">−</button>
+      <button class="zoom-btn" id="zoomIn">+</button>
+    </div>
+  </div>
+
+  <div class="layer-info" id="layerInfo">
+    <div class="layer-label">Layers (2)</div>
+  </div>
+
+  <div class="hint">좌클릭: 회전 &nbsp;|&nbsp; 우클릭: 이동 &nbsp;|&nbsp; 휠: 줌 &nbsp;|&nbsp; Space+드래그: 캔버스 이동</div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // Scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x888888);
+
+    // Camera — Orthographic (거리 상관없이 크기 동일)
+    const ZOOM_BASE = 0.9; // 초기 90%
+    const aspect = window.innerWidth / window.innerHeight;
+    const frustumH = 600;
+    const camera = new THREE.OrthographicCamera(
+      -frustumH * aspect, frustumH * aspect,
+       frustumH, -frustumH,
+      -2000, 2000
+    );
+    camera.zoom = ZOOM_BASE;
+    camera.updateProjectionMatrix();
+    camera.position.set(0, 0, 800);
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
+
+    // OrbitControls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.target.set(0, 0, 0);
+    controls.update(); // 초기 lookAt 확정
+
+    // Light
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+    dir.position.set(300, 400, 500);
+    scene.add(dir);
+
+    const D = 12;  // 두께 (= LABEL_D와 동일)
+    const GAP = 100; // 레이어 간격
+    const FRAME_W = 480;
+
+    // ── 컨테이너 높이 정의 (동적 계산용) ──
+    const H_TGAP = 60, H_LABEL = 80, H_TEXT = 120, H_MGAP = 60, H_ASSET = 300, H_GRID = FRAME_W / 2, H_BGAP = 60;
+    const FRAME_H = H_TGAP + H_LABEL + H_TEXT + H_MGAP + H_ASSET + H_GRID + H_BGAP; // 동적
+    const TOP_Y = FRAME_H / 2;
+
+    // 각 컨테이너 center y 계산 (위→아래 순서)
+    const Y_TGAP   = TOP_Y - H_TGAP / 2;
+    const Y_LABEL  = Y_TGAP  - H_TGAP  / 2 - H_LABEL  / 2;
+    const Y_TEXT   = Y_LABEL - H_LABEL / 2 - H_TEXT   / 2;
+    const Y_MGAP   = Y_TEXT  - H_TEXT  / 2 - H_MGAP   / 2;
+    const Y_ASSET  = Y_MGAP  - H_MGAP  / 2 - H_ASSET  / 2;
+    const Y_GRID   = Y_ASSET - H_ASSET / 2 - H_GRID   / 2;
+    const Y_BGAP   = Y_GRID  - H_GRID  / 2 - H_BGAP   / 2;
+
+    // ── Layer 1: Frame (뒤) ──
+    const frameGeo = new THREE.BoxGeometry(FRAME_W, FRAME_H, D);
+    const frameMats = [
+      new THREE.MeshLambertMaterial({ color: 0xddeeff }),
+      new THREE.MeshLambertMaterial({ color: 0xddeeff }),
+      new THREE.MeshLambertMaterial({ color: 0xddeeff }),
+      new THREE.MeshLambertMaterial({ color: 0xddeeff }),
+      new THREE.MeshBasicMaterial({ color: 0xffffff }),
+      new THREE.MeshLambertMaterial({ color: 0xe8f0ff }),
+    ];
+    const frame = new THREE.Mesh(frameGeo, frameMats);
+    frame.position.set(0, 0, 0);
+    scene.add(frame);
+    frame.add(new THREE.LineSegments(new THREE.EdgesGeometry(frameGeo), new THREE.LineBasicMaterial({ color: 0xbbbbbb })));
+
+    // ── 반투명 컨테이너 공통 재질 ──
+    function makeContainerMats(frontMat) {
+      const side = () => new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 });
+      return [side(), side(), side(), side(), frontMat, side()];
+    }
+    function makeGapMats() {
+      return makeContainerMats(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 }));
+    }
+    function addEdge(mesh, geo) {
+      mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0x222222 })));
+    }
+
+    // ── Top Gap Container ──
+    const gapGeo = new THREE.BoxGeometry(FRAME_W, H_TGAP, D);
+    const gapContainer = new THREE.Mesh(gapGeo, makeGapMats());
+    gapContainer.position.set(0, Y_TGAP, GAP + D/2);
+    scene.add(gapContainer); addEdge(gapContainer, gapGeo);
+
+    // ── Label Container (서브레이어를 내부에 담는 깊은 컨테이너) ──
+    const SD = 4; // 서브레이어 두께
+    // LABEL_D = SD + 간격(1) + SD + 앞뒤여백(2+2) = 13 → 12 (짝수)
+    const LABEL_D = SD * 2 + 4; // = 12
+    // 후면(z=GAP)을 다른 컨테이너들과 맞추고, 전면이 앞으로 LABEL_D만큼 돌출
+    const labelGroup = new THREE.Group();
+    labelGroup.position.set(0, Y_LABEL, GAP + LABEL_D / 2);
+    scene.add(labelGroup);
+
+    // Label 컨테이너 박스 (깊은 박스)
+    const labelGeo = new THREE.BoxGeometry(FRAME_W, H_LABEL, LABEL_D);
+    const labelMesh = new THREE.Mesh(labelGeo, makeGapMats());
+    // 컨테이너가 depth buffer를 막지 않도록 → 내부 서브레이어가 보임
+    labelMesh.material.forEach(m => { m.depthWrite = false; });
+    labelMesh.renderOrder = 0;
+    labelGroup.add(labelMesh);
+    labelMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(labelGeo), new THREE.LineBasicMaterial({ color: 0x222222 })));
+
+    // 서브레이어 1: 배경 박스 (amber) — 컨테이너 내부
+    // 로컬 z=10 → 전면에서 10 units 안쪽 (전면=+20)
+    const LBL_BG_W = FRAME_W * 0.35, LBL_BG_H = H_LABEL;
+    const lblBgGeo = new THREE.BoxGeometry(LBL_BG_W, LBL_BG_H, SD);
+    const lblBgMesh = new THREE.Mesh(lblBgGeo,
+      new THREE.MeshBasicMaterial({ color: 0xfcd34d, transparent: true, opacity: 0.9 }));
+    // 로컬 z: 컨테이너 back(-6)에서 1여백 후 BG Box center
+    lblBgMesh.position.set(0, 0, -LABEL_D/2 + 1 + SD/2); // = -3
+    lblBgMesh.renderOrder = 1;
+    labelGroup.add(lblBgMesh);
+    lblBgMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(lblBgGeo), new THREE.LineBasicMaterial({ color: 0xd97706 })));
+
+    // 서브레이어 2: 텍스트 레이어 — BG Box 바로 앞(전면 방향), 컨테이너 내부
+    const lblTxCanvas = document.createElement('canvas');
+    lblTxCanvas.width = 1024; lblTxCanvas.height = Math.round(1024 * LBL_BG_H / LBL_BG_W);
+    const ltx = lblTxCanvas.getContext('2d');
+    ltx.clearRect(0, 0, lblTxCanvas.width, lblTxCanvas.height);
+    ltx.fillStyle = '#1a1a1a';
+    ltx.font = `bold ${Math.round(lblTxCanvas.height * 0.55)}px Arial`;
+    ltx.textAlign = 'center';
+    ltx.textBaseline = 'middle';
+    ltx.fillText('label', lblTxCanvas.width / 2, lblTxCanvas.height / 2);
+    const lblTxGeo = new THREE.BoxGeometry(LBL_BG_W, LBL_BG_H, SD);
+    const lblTxMesh = new THREE.Mesh(lblTxGeo,
+      makeContainerMats(new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(lblTxCanvas), transparent: true, opacity: 0.95 })));
+    // BG Box front(-1) + 1간격 + LabelText center(+SD/2) = +2
+    lblTxMesh.position.set(0, 0, -LABEL_D/2 + 1 + SD + 1 + SD/2); // = +2
+    lblTxMesh.renderOrder = 2;
+    labelGroup.add(lblTxMesh);
+    lblTxMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(lblTxGeo), new THREE.LineBasicMaterial({ color: 0x444444 })));
+
+    // ── Text Container ──
+    const texCanvas = document.createElement('canvas');
+    texCanvas.width = 1024; texCanvas.height = Math.round(1024 * H_TEXT / FRAME_W);
+    const ctx = texCanvas.getContext('2d');
+    ctx.clearRect(0, 0, texCanvas.width, texCanvas.height);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 150px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('안녕하세요', texCanvas.width / 2, texCanvas.height / 2);
+    const texture = new THREE.CanvasTexture(texCanvas);
+
+    const containerGeo = new THREE.BoxGeometry(FRAME_W, H_TEXT, D);
+    const container = new THREE.Mesh(containerGeo, makeGapMats()); // 앞면은 빈 상태
+    container.position.set(0, Y_TEXT, GAP + D/2);
+    scene.add(container); addEdge(container, containerGeo);
+    // 텍스트는 별도 플레인 — 패딩 시 비율 유지
+    const texPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(FRAME_W, H_TEXT),
+      new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.95 })
+    );
+    texPlane.position.z = D / 2 + 0.2;
+    container.add(texPlane);
+
+    // ── Mid Gap Container ──
+    const gapGeo2 = new THREE.BoxGeometry(FRAME_W, H_MGAP, D);
+    const gapContainer2 = new THREE.Mesh(gapGeo2, makeGapMats());
+    gapContainer2.position.set(0, Y_MGAP, GAP + D/2);
+    scene.add(gapContainer2); addEdge(gapContainer2, gapGeo2);
+
+    // ── Asset Container ──
+    const assetCanvas = document.createElement('canvas');
+    assetCanvas.width = 1024; assetCanvas.height = Math.round(1024 * H_ASSET / FRAME_W);
+    const actx = assetCanvas.getContext('2d');
+    actx.clearRect(0, 0, assetCanvas.width, assetCanvas.height);
+    // 이미지 아이콘 (산+태양 픽토그램)
+    const aw = assetCanvas.width, ah = assetCanvas.height;
+    const cx = aw / 2, cy = ah / 2;
+    const sz = Math.min(aw, ah) * 0.18; // 작고 미니멀
+    actx.strokeStyle = '#333333';
+    actx.lineWidth = aw * 0.012;
+    actx.lineJoin = 'round';
+    actx.lineCap = 'round';
+    // 프레임 사각형 (둥근 모서리 효과용 strokeRect)
+    const rx = cx - sz, ry = cy - sz * 0.78, rw = sz * 2, rh = sz * 1.56;
+    actx.beginPath();
+    const r = sz * 0.12;
+    actx.moveTo(rx + r, ry);
+    actx.lineTo(rx + rw - r, ry); actx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + r);
+    actx.lineTo(rx + rw, ry + rh - r); actx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - r, ry + rh);
+    actx.lineTo(rx + r, ry + rh); actx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - r);
+    actx.lineTo(rx, ry + r); actx.quadraticCurveTo(rx, ry, rx + r, ry);
+    actx.closePath(); actx.stroke();
+    // 산 모양
+    actx.beginPath();
+    actx.moveTo(cx - sz * 0.85, cy + sz * 0.55);
+    actx.lineTo(cx - sz * 0.18, cy - sz * 0.08);
+    actx.lineTo(cx + sz * 0.28, cy + sz * 0.22);
+    actx.lineTo(cx + sz * 0.58, cy - sz * 0.18);
+    actx.lineTo(cx + sz * 0.85, cy + sz * 0.55);
+    actx.closePath(); actx.stroke();
+    // 태양 원
+    actx.beginPath();
+    actx.arc(cx - sz * 0.42, cy - sz * 0.35, sz * 0.18, 0, Math.PI * 2);
+    actx.stroke();
+    const assetGeo = new THREE.BoxGeometry(FRAME_W, H_ASSET, D);
+    const assetContainer = new THREE.Mesh(assetGeo,
+      makeContainerMats(new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(assetCanvas), transparent: true, opacity: 0.9 })));
+    assetContainer.position.set(0, Y_ASSET, GAP + D/2);
+    scene.add(assetContainer); addEdge(assetContainer, assetGeo);
+
+    // ── Grid Container (1×2 레이아웃) ──
+    const CELL_Z = 10; // 셀 서브레이어 오프셋
+    const CELL_W = FRAME_W / 2;    // 각 셀 너비 (컨테이너 절반)
+    const CELL_H = H_GRID;         // 컨테이너 높이와 동일
+    const CELL_X = FRAME_W / 4;   // 좌우 셀 x 오프셋
+
+    const gridGroup = new THREE.Group();
+    gridGroup.position.set(0, Y_GRID, GAP + D/2);
+    scene.add(gridGroup);
+
+    // 그리드 컨테이너 박스
+    const gridGeo = new THREE.BoxGeometry(FRAME_W, H_GRID, D);
+    const gridMesh = new THREE.Mesh(gridGeo, makeGapMats());
+    gridGroup.add(gridMesh);
+    gridMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(gridGeo), new THREE.LineBasicMaterial({ color: 0x222222 })));
+
+    // 공통 셀 생성 함수
+    function makeCell(xPos) {
+      const cellGeo = new THREE.BoxGeometry(CELL_W, CELL_H, D);
+      const cellMesh = new THREE.Mesh(cellGeo,
+        new THREE.MeshLambertMaterial({ color: 0xdbeafe, transparent: true, opacity: 0.55 }));
+      cellMesh.position.set(xPos, 0, CELL_Z);
+      gridGroup.add(cellMesh);
+      cellMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(cellGeo), new THREE.LineBasicMaterial({ color: 0x3b82f6 })));
+      return cellMesh;
+    }
+
+    const cellLeft  = makeCell(-CELL_X);
+    const cellRight = makeCell(+CELL_X);
+
+    // ── Grid 세로 갭박스 (두 셀 사이) ──
+    const gridGapGeo = new THREE.BoxGeometry(1, H_GRID, D);
+    const gridGapBox = new THREE.Mesh(gridGapGeo, makeGapMats());
+    gridGapBox.position.set(0, 0, CELL_Z);
+    gridGapBox.visible = false;
+    gridGroup.add(gridGapBox);
+    gridGapBox.add(new THREE.LineSegments(new THREE.EdgesGeometry(gridGapGeo), new THREE.LineBasicMaterial({ color: 0x555555 })));
+
+    // ── Bottom Gap Container ──
+    const gapGeo3 = new THREE.BoxGeometry(FRAME_W, H_BGAP, D);
+    const gapContainer3 = new THREE.Mesh(gapGeo3, makeGapMats());
+    gapContainer3.position.set(0, Y_BGAP, GAP + D/2);
+    scene.add(gapContainer3); addEdge(gapContainer3, gapGeo3);
+
+    // ── Frame 격자 (정방형, 가로 5칸) ──
+    const GRID_CELL = FRAME_W / 6; // = 80 (정방형)
+    const GRID_COLS = 6;
+    const GRID_ROWS = Math.round(FRAME_H / GRID_CELL); // ≈ 8
+    const gridPoints = [];
+    // 수직선
+    for (let i = 0; i <= GRID_COLS; i++) {
+      const x = -FRAME_W / 2 + i * GRID_CELL;
+      gridPoints.push(x, -FRAME_H / 2, 0,  x, FRAME_H / 2, 0);
+    }
+    // 수평선
+    for (let j = 0; j <= GRID_ROWS; j++) {
+      const y = -FRAME_H / 2 + j * GRID_CELL;
+      gridPoints.push(-FRAME_W / 2, y, 0,  FRAME_W / 2, y, 0);
+    }
+    const frameGridGeo = new THREE.BufferGeometry();
+    frameGridGeo.setAttribute('position', new THREE.Float32BufferAttribute(gridPoints, 3));
+    const frameGrid = new THREE.LineSegments(frameGridGeo,
+      new THREE.LineBasicMaterial({ color: 0x88aacc, transparent: true, opacity: 0.45 }));
+    frameGrid.position.set(0, 0, D / 2 + 0.5); // 프레임 앞면 바로 위
+    frame.add(frameGrid);
+    frameGrid.visible = false;
+
+    document.getElementById('gridToggle').addEventListener('change', function() {
+      frameGrid.visible = this.checked;
+    });
+
+    // ── Layer 3: Overlay (프레임과 동일 크기, Layer 2 앞) ──
+    const LAYER3_Z = 2 * (GAP + D/2); // Layer 2와 같은 간격만큼 앞에
+    const overlayGeo = new THREE.BoxGeometry(FRAME_W, FRAME_H, D);
+    const overlayMat = () => new THREE.MeshLambertMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0.12, depthWrite: false });
+    const overlay = new THREE.Mesh(overlayGeo, [overlayMat(), overlayMat(), overlayMat(), overlayMat(),
+      new THREE.MeshBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0.18, depthWrite: false }), overlayMat()]);
+    overlay.position.set(0, 0, LAYER3_Z);
+    overlay.visible = false;
+    scene.add(overlay);
+    overlay.add(new THREE.LineSegments(new THREE.EdgesGeometry(overlayGeo), new THREE.LineBasicMaterial({ color: 0x7c3aed })));
+
+    // ── Layer 4: Floating Asset (원형 디스크) ──
+    const FLOAT_Z = LAYER3_Z + D/2 + 40;
+    const floatGeo = new THREE.CylinderGeometry(70, 70, D, 64);
+    floatGeo.rotateX(Math.PI / 2); // Y축 → Z축 방향으로 세움
+    const floatMesh = new THREE.Mesh(floatGeo,
+      new THREE.MeshBasicMaterial({ color: 0xfda4af, transparent: true, opacity: 0.88 }));
+    floatMesh.position.set(0, 60, FLOAT_Z);
+    floatMesh.visible = false;
+    scene.add(floatMesh);
+    floatMesh.add(new THREE.LineSegments(
+      new THREE.EdgesGeometry(floatGeo),
+      new THREE.LineBasicMaterial({ color: 0xe11d48 })
+    ));
+
+    // 플로팅 텍스트 컨테이너
+    const FT_W = 200, FT_H = 60;
+    const ftCanvas = document.createElement('canvas');
+    ftCanvas.width = 512; ftCanvas.height = Math.round(512 * FT_H / FT_W);
+    const ftx = ftCanvas.getContext('2d');
+    ftx.clearRect(0, 0, ftCanvas.width, ftCanvas.height);
+    ftx.fillStyle = '#1a1a1a';
+    ftx.font = `bold ${Math.round(ftCanvas.height * 0.5)}px Arial`;
+    ftx.textAlign = 'center';
+    ftx.textBaseline = 'middle';
+    ftx.fillText('텍스트', ftCanvas.width / 2, ftCanvas.height / 2);
+
+    const ftGeo = new THREE.BoxGeometry(FT_W, FT_H, D);
+    const floatText = new THREE.Mesh(ftGeo, makeGapMats());
+    floatText.position.set(0, -60, FLOAT_Z);
+    floatText.visible = false;
+    scene.add(floatText);
+    addEdge(floatText, ftGeo);
+    const ftPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(FT_W, FT_H),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(ftCanvas), transparent: true, opacity: 0.95 })
+    );
+    ftPlane.position.z = D / 2 + 0.2;
+    floatText.add(ftPlane);
+
+    // --- 패딩 슬라이더 (Layer 2 컨테이너 너비 조절) ---
+    const allContainers = [gapContainer, labelGroup, container, gapContainer2, assetContainer, gridGroup, gapContainer3];
+
+    const padMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.25 });
+    const padEdgeMat = new THREE.LineBasicMaterial({ color: 0x3b82f6 });
+
+    // BoxGeometry(1,1,D) → scale.set(w,h,1) 으로 크기 직접 제어
+    const padGeoL = new THREE.BoxGeometry(1, 1, D);
+    const padLeft = new THREE.Mesh(padGeoL, padMat);
+    padLeft.visible = false;
+    scene.add(padLeft);
+    padLeft.add(new THREE.LineSegments(new THREE.EdgesGeometry(padGeoL), padEdgeMat));
+
+    const padGeoR = new THREE.BoxGeometry(1, 1, D);
+    const padRight = new THREE.Mesh(padGeoR, padMat.clone());
+    padRight.visible = false;
+    scene.add(padRight);
+    padRight.add(new THREE.LineSegments(new THREE.EdgesGeometry(padGeoR), padEdgeMat.clone()));
+
+    // 상단 패딩 블록 (전체 너비)
+    const padGeoT = new THREE.BoxGeometry(1, 1, D);
+    const padTop = new THREE.Mesh(padGeoT, new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.25 }));
+    scene.add(padTop);
+    padTop.add(new THREE.LineSegments(new THREE.EdgesGeometry(padGeoT), new THREE.LineBasicMaterial({ color: 0x3b82f6 })));
+
+    const padGeoB = new THREE.BoxGeometry(1, 1, D);
+    const padBottom = new THREE.Mesh(padGeoB, new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.25 }));
+    scene.add(padBottom);
+    padBottom.add(new THREE.LineSegments(new THREE.EdgesGeometry(padGeoB), new THREE.LineBasicMaterial({ color: 0x3b82f6 })));
+
+    let curPadH = 0, curPadV = 0;
+    let showPadBlocks = true;
+
+    function updatePadding() {
+      const pH = curPadH, pV = curPadV;
+
+      // 컨테이너 너비 조절 (프레임 내에서 축소)
+      const scaleX = Math.max(0.001, (FRAME_W - pH * 2) / FRAME_W);
+      allContainers.forEach(c => { c.scale.x = scaleX; });
+
+      // 라벨 서브레이어 + 텍스트 플레인은 절대 너비 고정 — 부모 scale 상쇄
+      const invScale = 1 / scaleX;
+      lblBgMesh.scale.x = invScale;
+      lblTxMesh.scale.x = invScale;
+      texPlane.scale.x = invScale;
+
+      // 좌우 패딩 블록: 상하 패딩 사이 높이, 프레임 내부
+      const lrH = Math.max(0.01, FRAME_H - pV * 2);
+      padLeft.scale.set(Math.max(0.01, pH), lrH, 1);
+      padLeft.position.set(-FRAME_W / 2 + pH / 2, 0, GAP + D/2);
+      padRight.scale.set(Math.max(0.01, pH), lrH, 1);
+      padRight.position.set(FRAME_W / 2 - pH / 2, 0, GAP + D/2);
+      padLeft.visible  = showPadBlocks && pH > 0;
+      padRight.visible = showPadBlocks && pH > 0;
+
+      // 상하 패딩 블록: 전체 너비
+      padTop.scale.set(FRAME_W, Math.max(0.01, pV), 1);
+      padTop.position.set(0, FRAME_H / 2 - pV / 2, GAP + D/2);
+      padBottom.scale.set(FRAME_W, Math.max(0.01, pV), 1);
+      padBottom.position.set(0, -FRAME_H / 2 + pV / 2, GAP + D/2);
+      padTop.visible    = showPadBlocks && pV > 0;
+      padBottom.visible = showPadBlocks && pV > 0;
+    }
+
+    document.getElementById('paddingSlider').addEventListener('input', function() {
+      curPadH = Number(this.value);
+      document.getElementById('paddingVal').textContent = curPadH + 'px';
+      updatePadding();
+    });
+
+    document.getElementById('paddingVSlider').addEventListener('input', function() {
+      curPadV = Number(this.value);
+      document.getElementById('paddingVVal').textContent = curPadV + 'px';
+      updatePadding();
+    });
+
+updatePadding();
+
+    document.getElementById('padBlockToggle').addEventListener('change', function() {
+      showPadBlocks = this.checked;
+      updatePadding();
+      updateGridCells();
+    });
+
+    // --- Grid 1×2 좌우 패딩 ---
+    const gridPadMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.25 });
+    const gridPadEdgeMat = new THREE.LineBasicMaterial({ color: 0x3b82f6 });
+
+    const gridPadGeoL = new THREE.BoxGeometry(1, 1, D);
+    const gridPadLeft = new THREE.Mesh(gridPadGeoL, gridPadMat);
+    gridPadLeft.visible = false;
+    gridPadLeft.position.set(0, 0, CELL_Z);
+    gridGroup.add(gridPadLeft);
+    gridPadLeft.add(new THREE.LineSegments(new THREE.EdgesGeometry(gridPadGeoL), gridPadEdgeMat));
+
+    const gridPadGeoR = new THREE.BoxGeometry(1, 1, D);
+    const gridPadRight = new THREE.Mesh(gridPadGeoR, gridPadMat.clone());
+    gridPadRight.visible = false;
+    gridPadRight.position.set(0, 0, CELL_Z);
+    gridGroup.add(gridPadRight);
+    gridPadRight.add(new THREE.LineSegments(new THREE.EdgesGeometry(gridPadGeoR), gridPadEdgeMat.clone()));
+
+    let curGridPad = 0, curGridGap = 0;
+
+    function updateGridCells() {
+      const p = curGridPad, g = curGridGap;
+      // 셀 너비: 패딩 + 갭 뺀 나머지를 반으로
+      const cellNewW = Math.max(1, (FRAME_W - 2 * p - g) / 2);
+      const scaleX = cellNewW / CELL_W;
+      cellLeft.scale.x  = scaleX;
+      cellRight.scale.x = scaleX;
+      // 셀 중심 위치
+      cellLeft.position.x  = -FRAME_W / 2 + p + cellNewW / 2;
+      cellRight.position.x =  FRAME_W / 2 - p - cellNewW / 2;
+      // 갭박스
+      gridGapBox.visible = g > 0;
+      gridGapBox.scale.set(Math.max(0.01, g), 1, 1);
+      // 패딩 블록
+      gridPadLeft.scale.set(Math.max(0.01, p), H_GRID, 1);
+      gridPadRight.scale.set(Math.max(0.01, p), H_GRID, 1);
+      gridPadLeft.position.x  = -FRAME_W / 2 + p / 2;
+      gridPadRight.position.x =  FRAME_W / 2 - p / 2;
+      gridPadLeft.visible  = showPadBlocks && p > 0;
+      gridPadRight.visible = showPadBlocks && p > 0;
+    }
+
+    document.getElementById('gridPadSlider').addEventListener('input', function() {
+      curGridPad = Number(this.value);
+      document.getElementById('gridPadVal').textContent = curGridPad + 'px';
+      updateGridCells();
+    });
+
+    document.getElementById('gridGapSlider').addEventListener('input', function() {
+      curGridGap = Number(this.value);
+      document.getElementById('gridGapVal').textContent = curGridGap + 'px';
+      updateGridCells();
+    });
+
+    // --- 뷰 버튼 ---
+    function setView(px, py, pz, tx, ty, tz, upX, upY, upZ) {
+      camera.position.set(px, py, pz);
+      camera.up.set(upX, upY, upZ);
+      controls.target.set(tx, ty, tz);
+      camera.zoom = ZOOM_BASE;
+      camera.updateProjectionMatrix();
+      controls.update();
+      zoomVal.textContent = '90%';
+      slider.value = 90;
+    }
+    document.getElementById('btnFront').addEventListener('click', () => setView(0, 0, 800, 0, 0, 0,  0, 1, 0));
+    document.getElementById('btnTop'  ).addEventListener('click', () => setView(0, 800, 0, 0, 0, 0,  0, 0, -1));
+    document.getElementById('btnSide' ).addEventListener('click', () => setView(800, 0, 100, 0, 0, 100, 0, 1, 0));
+
+    // --- 배율 슬라이더 ---
+    const slider = document.getElementById('zoomSlider');
+    const zoomVal = document.getElementById('zoomVal');
+
+    function applyZoom(pct) {
+      camera.zoom = pct / 100;
+      camera.updateProjectionMatrix();
+      zoomVal.textContent = pct + '%';
+      slider.value = pct;
+    }
+
+    slider.addEventListener('input', () => applyZoom(Number(slider.value)));
+
+    document.getElementById('zoomIn').addEventListener('click', () => {
+      applyZoom(Math.min(300, Number(slider.value) + 10));
+    });
+    document.getElementById('zoomOut').addEventListener('click', () => {
+      applyZoom(Math.max(20, Number(slider.value) - 10));
+    });
+
+    // 휠 줌 시 슬라이더 동기화
+    controls.addEventListener('change', () => {
+      const pct = Math.round(camera.zoom * 100);
+      zoomVal.textContent = Math.min(300, Math.max(20, pct)) + '%';
+      slider.value = Math.min(300, Math.max(20, pct));
+    });
+
+    // Resize
+    window.addEventListener('resize', () => {
+      const a = window.innerWidth / window.innerHeight;
+      camera.left = -frustumH * a;
+      camera.right = frustumH * a;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- 선택 & 바운딩 박스 ---
+    let selectedItem = null;
+    const boxHelper = new THREE.BoxHelper(frame, 0x60a5fa);
+    boxHelper.visible = false;
+    scene.add(boxHelper);
+
+    function updatePropsPanel(item) {
+      const propsContent = document.getElementById('propsContent');
+      if (!item || !item.obj) {
+        propsContent.innerHTML = '<div class="prop-none">선택된 레이어 없음</div>';
+        return;
+      }
+      const obj = item.obj;
+      const wp = new THREE.Vector3();
+      obj.getWorldPosition(wp);
+      let w = '—', h = '—', d = '—';
+      if (obj.isGroup) {
+        const box = new THREE.Box3().setFromObject(obj);
+        const sz = new THREE.Vector3(); box.getSize(sz);
+        w = Math.round(sz.x); h = Math.round(sz.y); d = Math.round(sz.z);
+      } else if (obj.geometry && obj.geometry.parameters) {
+        const p = obj.geometry.parameters;
+        w = p.width  ? Math.round(p.width  * (obj.scale.x || 1)) : '—';
+        h = p.height ? Math.round(p.height * (obj.scale.y || 1)) : '—';
+        d = p.depth  ? Math.round(p.depth) : (p.radiusTop != null ? Math.round(p.radiusTop * 2) + ' ⌀' : '—');
+      }
+      propsContent.innerHTML = `
+        <div style="font-size:12px;color:#fff;font-weight:bold;margin-bottom:6px;">${item.label}</div>
+        <div class="prop-divider"></div>
+        <div class="sidebar-section-title" style="margin:6px 0 4px;">Position</div>
+        <div class="prop-grid">
+          <div class="prop-item"><div class="prop-item-label">X</div><div class="prop-item-val">${Math.round(wp.x)}</div></div>
+          <div class="prop-item"><div class="prop-item-label">Y</div><div class="prop-item-val">${Math.round(wp.y)}</div></div>
+          <div class="prop-item"><div class="prop-item-label">Z</div><div class="prop-item-val">${Math.round(wp.z)}</div></div>
+        </div>
+        <div class="sidebar-section-title" style="margin:8px 0 4px;">Size</div>
+        <div class="prop-grid">
+          <div class="prop-item"><div class="prop-item-label">W</div><div class="prop-item-val">${w}</div></div>
+          <div class="prop-item"><div class="prop-item-label">H</div><div class="prop-item-val">${h}</div></div>
+          <div class="prop-item"><div class="prop-item-label">D</div><div class="prop-item-val">${d}</div></div>
+        </div>`;
+    }
+
+    function selectLayer(item, row) {
+      document.querySelectorAll('.layer-row.selected').forEach(r => r.classList.remove('selected'));
+      if (selectedItem === item) {
+        selectedItem = null;
+        boxHelper.visible = false;
+        updatePropsPanel(null);
+        return;
+      }
+      selectedItem = item;
+      row.classList.add('selected');
+      if (item.obj) {
+        boxHelper.setFromObject(item.obj);
+        boxHelper.visible = true;
+      } else {
+        boxHelper.visible = false;
+      }
+      updatePropsPanel(item);
+    }
+
+    // --- 레이어 패널 동적 빌드 (체크박스 토글) ---
+    function buildLayerTree() {
+      const panel = document.getElementById('layerInfo');
+
+      // 트리 데이터: [label, depth, object or null, dotColor if header]
+      const tree = [
+        { label: 'Layer 2 — Container', depth: 0, obj: null, dot: 'rgba(255,255,255,0.6)' },
+        { label: 'Top Gap',    depth: 1, obj: gapContainer },
+        { label: 'Label',      depth: 1, obj: labelGroup },
+        { label: 'BG Box',     depth: 2, obj: lblBgMesh },
+        { label: 'Label Text', depth: 2, obj: lblTxMesh },
+        { label: 'Text',       depth: 1, obj: container },
+        { label: 'Mid Gap',    depth: 1, obj: gapContainer2 },
+        { label: 'Asset',      depth: 1, obj: assetContainer },
+        { label: 'Grid 1×2',   depth: 1, obj: gridGroup },
+        { label: 'Bottom Gap', depth: 1, obj: gapContainer3 },
+        { label: 'Layer 3 — Overlay', depth: 0, obj: null, dot: 'rgba(196,181,253,0.7)' },
+        { label: 'Overlay',    depth: 1, obj: overlay, defaultVisible: false },
+        { label: 'Layer 4 — Floating', depth: 0, obj: null, dot: 'rgba(253,164,175,0.8)' },
+        { label: 'Float Circle', depth: 1, obj: floatMesh, defaultVisible: false },
+        { label: 'Float Text',   depth: 1, obj: floatText, defaultVisible: false },
+        { label: 'Layer 1 — Frame', depth: 0, obj: null, dot: '#e5e7eb' },
+        { label: 'Frame',      depth: 1, obj: frame },
+      ];
+
+      tree.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'layer-row';
+        row.style.paddingLeft = (item.depth * 14 + 4) + 'px';
+
+        if (!item.obj && item.dot) {
+          // 섹션 헤더
+          row.className = 'layer-section-head';
+          row.style.paddingLeft = '4px';
+          row.style.marginTop = item.depth === 0 ? '6px' : '2px';
+          const dot = document.createElement('div');
+          dot.className = 'layer-dot';
+          dot.style.cssText = `background:${item.dot}; border:1px solid ${item.dot === '#e5e7eb' ? '#aaa' : '#555'};`;
+          row.appendChild(dot);
+          const span = document.createElement('span');
+          span.textContent = item.label;
+          row.appendChild(span);
+        } else if (item.obj) {
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = item.defaultVisible !== false;
+          cb.className = 'layer-cb';
+          cb.addEventListener('change', () => {
+            item.obj.visible = cb.checked;
+          });
+          row.appendChild(cb);
+          const span = document.createElement('span');
+          span.textContent = item.label;
+          span.style.cssText = `font-size:${item.depth >= 2 ? '10' : '12'}px; color:rgba(255,255,255,${item.depth >= 2 ? '0.5' : '0.8'});`;
+          row.appendChild(span);
+          row.style.cursor = 'pointer';
+          row.addEventListener('click', (e) => {
+            if (e.target === cb) return;
+            selectLayer(item, row);
+          });
+        }
+
+        panel.appendChild(row);
+      });
+    }
+    buildLayerTree();
+
+    // --- 스페이스바 + 드래그 캔버스 이동 (피그마 스타일) ---
+    let spaceDown = false, isPanning = false;
+    let panLastX = 0, panLastY = 0;
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !e.repeat) {
+        spaceDown = true;
+        controls.enabled = false;
+        document.body.style.cursor = 'grab';
+        e.preventDefault();
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'Space') {
+        spaceDown = false;
+        isPanning = false;
+        controls.enabled = true;
+        document.body.style.cursor = '';
+      }
+    });
+    renderer.domElement.addEventListener('mousedown', (e) => {
+      if (spaceDown && e.button === 0) {
+        isPanning = true;
+        panLastX = e.clientX;
+        panLastY = e.clientY;
+        document.body.style.cursor = 'grabbing';
+      }
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!isPanning) return;
+      const dx = e.clientX - panLastX;
+      const dy = e.clientY - panLastY;
+      panLastX = e.clientX;
+      panLastY = e.clientY;
+      // 화면 픽셀 → 월드 단위 변환
+      const worldPerPx = (frustumH * 2) / (window.innerHeight * camera.zoom);
+      const wx = -dx * worldPerPx;
+      const wy =  dy * worldPerPx;
+      camera.position.x += wx;
+      camera.position.y += wy;
+      controls.target.x  += wx;
+      controls.target.y  += wy;
+    });
+    window.addEventListener('mouseup', () => {
+      if (isPanning) {
+        isPanning = false;
+        if (spaceDown) document.body.style.cursor = 'grab';
+      }
+    });
+
+    // Animate
+    (function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      if (boxHelper.visible) boxHelper.update();
+      renderer.render(scene, camera);
+    })();
+  </script>
+
+</body>
+</html>
