@@ -3,396 +3,112 @@
 <head>
   <meta charset="UTF-8">
   <title>Stack Preview</title>
+  <link rel="stylesheet" href="design-system.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #888; overflow: hidden; font-family: Arial, sans-serif; }
-    canvas { display: block; }
-
-    /* 우측 사이드바 */
+    /* ── 앱 전용 레이아웃 ── */
     .sidebar {
       position: fixed;
-      top: 0;
-      right: 0;
-      width: 220px;
-      height: 100vh;
-      background: rgba(22, 22, 22, 0.92);
-      backdrop-filter: blur(12px);
-      border-left: 1px solid rgba(255,255,255,0.08);
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      user-select: none;
+      top: 0; right: 0;
+      width: 220px; height: 100vh;
+      display: flex; flex-direction: column;
       overflow-y: auto;
+      border-radius: 0;
+      border-left: 1px solid var(--color-border);
+      border-right: none; border-top: none; border-bottom: none;
     }
-
-    .sidebar-header {
-      padding: 16px;
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.4);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-    }
-
-    .sidebar-section {
-      padding: 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .sidebar-section-title {
-      font-size: 11px;
-      color: rgba(255,255,255,0.5);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-
-    .prop-row {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .prop-label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: rgba(255,255,255,0.8);
-    }
-
-    .prop-val {
-      color: #fff;
-      font-weight: bold;
-      font-size: 12px;
-    }
-
-    .prop-slider {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 3px;
-      border-radius: 2px;
-      background: rgba(255,255,255,0.2);
-      outline: none;
-      cursor: pointer;
-    }
-    .prop-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #fff;
-      cursor: pointer;
-    }
-
-    /* 플로팅 패널 */
     .panel-ui {
       position: fixed;
-      top: 20px;
-      right: 240px;
-      background: rgba(30, 30, 30, 0.85);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 12px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      top: 20px; right: 240px;
       min-width: 160px;
-      color: #fff;
-      user-select: none;
+      display: flex; flex-direction: column;
+      gap: var(--sp-2);
       cursor: default;
     }
 
-    .panel-title {
-      font-size: 11px;
-      color: rgba(255,255,255,0.4);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-    }
-
-.btn-front {
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 8px;
-      color: #fff;
-      font-size: 13px;
-      padding: 8px 12px;
-      cursor: pointer;
-      transition: background 0.15s;
-      text-align: center;
-    }
-    .btn-front:hover { background: rgba(255,255,255,0.2); }
-    .btn-front:active { background: rgba(255,255,255,0.3); }
-
-    .divider {
-      height: 1px;
-      background: rgba(255,255,255,0.1);
-    }
-
-    .zoom-label {
-      font-size: 11px;
-      color: rgba(255,255,255,0.5);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .zoom-value {
-      color: #fff;
-      font-size: 12px;
-      font-weight: bold;
-    }
-
-    .zoom-slider {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 4px;
-      border-radius: 2px;
-      background: rgba(255,255,255,0.2);
-      outline: none;
-      cursor: pointer;
-    }
-    .zoom-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #fff;
-      cursor: pointer;
-    }
-
-    .zoom-btns {
-      display: flex;
-      gap: 6px;
-    }
-    .zoom-btn {
-      flex: 1;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 6px;
-      color: #fff;
-      font-size: 16px;
-      padding: 4px 0;
-      cursor: pointer;
-      transition: background 0.15s;
-      text-align: center;
-      line-height: 1;
-    }
-    .zoom-btn:hover { background: rgba(255,255,255,0.2); }
-
-    .hint {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: rgba(255,255,255,0.4);
-      font-size: 12px;
-      letter-spacing: 1px;
-      pointer-events: none;
-    }
-
-    .layer-info {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      pointer-events: none; /* 기본은 통과 */
-    }
-
-    /* 체크박스 행만 클릭 가능 */
-    .layer-row, .layer-section-head {
-      pointer-events: auto;
-    }
-
-    .layer-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.85);
-      font-family: Arial, sans-serif;
-    }
-
-    .layer-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 2px;
-      flex-shrink: 0;
-    }
-
-    .layer-label {
-      color: rgba(255,255,255,0.4);
-      font-size: 11px;
-      margin-bottom: 2px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      font-family: Arial, sans-serif;
-    }
-
-    .layer-cb {
-      width: 11px;
-      height: 11px;
-      margin-right: 5px;
-      cursor: pointer;
-      flex-shrink: 0;
-      accent-color: #60a5fa;
-    }
-
-    .layer-section-head {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.85);
-      font-family: Arial, sans-serif;
-      margin-top: 4px;
-    }
-
-    .layer-row {
-      display: flex;
-      align-items: center;
-      font-family: Arial, sans-serif;
-      gap: 0;
-      line-height: 1.6;
-    }
-
-    .layer-row span {
-      white-space: nowrap;
-    }
-
-    .layer-row.selected {
-      background: rgba(96,165,250,0.18);
-      border-radius: 4px;
-    }
-
-    .prop-divider {
-      height: 1px;
-      background: rgba(255,255,255,0.07);
-      margin: 2px 0;
-    }
-
-    .prop-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-
-    .prop-item {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .prop-item-label {
-      font-size: 10px;
-      color: rgba(255,255,255,0.35);
-      letter-spacing: 0.5px;
-    }
-
-    .prop-item-val {
-      font-size: 12px;
-      color: #fff;
-      background: rgba(255,255,255,0.06);
-      border-radius: 4px;
-      padding: 3px 6px;
-    }
-
-    .prop-none {
-      font-size: 11px;
-      color: rgba(255,255,255,0.25);
-      text-align: center;
-      padding: 8px 0;
-    }
   </style>
 </head>
 <body>
 
   <!-- 우측 편집 사이드바 -->
-  <div class="sidebar">
-    <div class="sidebar-header">Edit Panel</div>
+  <div class="sidebar panel">
+    <div class="panel-header">Edit Panel</div>
 
-    <div class="sidebar-section" id="propsSection">
-      <div class="sidebar-section-title">Properties</div>
-      <div id="propsContent"><div class="prop-none">선택된 레이어 없음</div></div>
-      <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);">
-        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,0.8);cursor:pointer;">
-          <input type="checkbox" id="padBlockToggle" checked style="accent-color:#60a5fa;cursor:pointer;">
+    <div class="panel-section" id="propsSection">
+      <div class="panel-section-title">Properties</div>
+      <div id="propsContent"><div class="empty-state">선택된 레이어 없음</div></div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--color-border-divider);">
+        <label class="check-label" style="margin-top:0">
+          <input type="checkbox" id="padBlockToggle" checked>
           패딩 블록 표시
         </label>
       </div>
     </div>
 
-    <div class="sidebar-section">
-      <div class="sidebar-section-title">Layer 1 — Frame</div>
+    <div class="panel-section" id="ctrl-frame" style="display:none">
+      <div class="panel-section-title">Frame — 패딩 / 격자</div>
       <div class="prop-row">
-        <div class="prop-label">
-          <span>좌우 패딩</span>
-          <span class="prop-val" id="paddingVal">0px</span>
-        </div>
-        <input type="range" class="prop-slider" id="paddingSlider" min="0" max="180" value="0">
+        <div class="prop-label"><span>좌우 패딩</span><span class="prop-val" id="paddingVal">0px</span></div>
+        <input type="range" class="slider" id="paddingSlider" min="0" max="180" value="0">
       </div>
       <div class="prop-row">
-        <div class="prop-label">
-          <span>상하 패딩</span>
-          <span class="prop-val" id="paddingVVal">0px</span>
-        </div>
-        <input type="range" class="prop-slider" id="paddingVSlider" min="0" max="300" value="0">
+        <div class="prop-label"><span>상하 패딩</span><span class="prop-val" id="paddingVVal">0px</span></div>
+        <input type="range" class="slider" id="paddingVSlider" min="0" max="300" value="0">
       </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-section-title">Layer 1 — Frame</div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,0.8);cursor:pointer;">
-        <input type="checkbox" id="gridToggle" style="accent-color:#60a5fa;cursor:pointer;">
+      <label class="check-label">
+        <input type="checkbox" id="gridToggle">
         격자 표시
       </label>
     </div>
 
-    <div class="sidebar-section">
-      <div class="sidebar-section-title">Grid 1×2 — Row</div>
+    <div class="panel-section" id="ctrl-grid1" style="display:none">
+      <div class="panel-section-title">Grid 1×2 — 간격</div>
       <div class="prop-row">
-        <div class="prop-label">
-          <span>좌우 패딩</span>
-          <span class="prop-val" id="gridPadVal">0px</span>
-        </div>
-        <input type="range" class="prop-slider" id="gridPadSlider" min="0" max="200" value="0">
+        <div class="prop-label"><span>좌우 패딩</span><span class="prop-val" id="gridPadVal">0px</span></div>
+        <input type="range" class="slider" id="gridPadSlider" min="0" max="200" value="0">
       </div>
       <div class="prop-row">
-        <div class="prop-label">
-          <span>셀 간격 (갭)</span>
-          <span class="prop-val" id="gridGapVal">0px</span>
-        </div>
-        <input type="range" class="prop-slider" id="gridGapSlider" min="0" max="160" value="0">
+        <div class="prop-label"><span>셀 간격 (갭)</span><span class="prop-val" id="gridGapVal">0px</span></div>
+        <input type="range" class="slider" id="gridGapSlider" min="0" max="160" value="0">
+      </div>
+    </div>
+
+    <div class="panel-section" id="ctrl-grid2" style="display:none">
+      <div class="panel-section-title">Grid 2×2 — 간격</div>
+      <div class="prop-row">
+        <div class="prop-label"><span>좌우 패딩</span><span class="prop-val" id="grid2PadVal">0px</span></div>
+        <input type="range" class="slider" id="grid2PadSlider" min="0" max="200" value="0">
+      </div>
+      <div class="prop-row">
+        <div class="prop-label"><span>열 간격 (가로)</span><span class="prop-val" id="grid2HGapVal">0px</span></div>
+        <input type="range" class="slider" id="grid2HGapSlider" min="0" max="160" value="0">
+      </div>
+      <div class="prop-row">
+        <div class="prop-label"><span>행 간격 (세로)</span><span class="prop-val" id="grid2VGapVal">0px</span></div>
+        <input type="range" class="slider" id="grid2VGapSlider" min="0" max="120" value="0">
       </div>
     </div>
   </div>
 
   <!-- 플로팅 패널 -->
-  <div class="panel-ui" id="panelUI">
-    <div class="panel-title">View Controls</div>
+  <div class="panel-ui panel" id="panelUI">
+    <div class="panel-header">View Controls</div>
 
-    <div style="display:flex;gap:5px;">
-      <button class="btn-front" id="btnFront" style="flex:1;padding:8px 4px;font-size:11px;">⊙ 정면</button>
-      <button class="btn-front" id="btnTop"   style="flex:1;padding:8px 4px;font-size:11px;">↑ 탑뷰</button>
-      <button class="btn-front" id="btnSide"  style="flex:1;padding:8px 4px;font-size:11px;">→ 사이드</button>
+    <div style="display:flex;gap:5px;padding:var(--sp-3) var(--sp-4) 0;">
+      <button class="btn btn--sm" id="btnFront" style="flex:1;">⊙ 정면</button>
+      <button class="btn btn--sm" id="btnTop"   style="flex:1;">↑ 탑뷰</button>
+      <button class="btn btn--sm" id="btnSide"  style="flex:1;">→ 사이드</button>
     </div>
 
-    <div class="divider"></div>
+    <div class="divider" style="margin:0 var(--sp-4);"></div>
 
-    <div class="zoom-label">
+    <div class="prop-label" style="padding:0 var(--sp-4);">
       <span>배율</span>
-      <span class="zoom-value" id="zoomVal">90%</span>
+      <span class="prop-val" id="zoomVal">90%</span>
     </div>
-    <input type="range" class="zoom-slider" id="zoomSlider" min="20" max="300" value="90">
-    <div class="zoom-btns">
-      <button class="zoom-btn" id="zoomOut">−</button>
-      <button class="zoom-btn" id="zoomIn">+</button>
+    <input type="range" class="slider" id="zoomSlider" min="20" max="300" value="90" style="padding:0 var(--sp-4);box-sizing:border-box;width:100%;">
+    <div class="zoom-btns" style="padding:0 var(--sp-4) var(--sp-3);">
+      <button class="btn btn--icon" id="zoomOut">−</button>
+      <button class="btn btn--icon" id="zoomIn">+</button>
     </div>
   </div>
 
@@ -456,8 +172,8 @@
     const FRAME_W = 480;
 
     // ── 컨테이너 높이 정의 (동적 계산용) ──
-    const H_TGAP = 60, H_LABEL = 80, H_TEXT = 120, H_MGAP = 60, H_ASSET = 300, H_GRID = FRAME_W / 2, H_BGAP = 60;
-    const FRAME_H = H_TGAP + H_LABEL + H_TEXT + H_MGAP + H_ASSET + H_GRID + H_BGAP; // 동적
+    const H_TGAP = 60, H_LABEL = 80, H_TEXT = 120, H_MGAP = 60, H_ASSET = 300, H_GRID = FRAME_W / 2, H_MGAP2 = 60, H_GRID2 = 280, H_BGAP = 60;
+    const FRAME_H = H_TGAP + H_LABEL + H_TEXT + H_MGAP + H_ASSET + H_GRID + H_MGAP2 + H_GRID2 + H_BGAP;
     const TOP_Y = FRAME_H / 2;
 
     // 각 컨테이너 center y 계산 (위→아래 순서)
@@ -467,7 +183,9 @@
     const Y_MGAP   = Y_TEXT  - H_TEXT  / 2 - H_MGAP   / 2;
     const Y_ASSET  = Y_MGAP  - H_MGAP  / 2 - H_ASSET  / 2;
     const Y_GRID   = Y_ASSET - H_ASSET / 2 - H_GRID   / 2;
-    const Y_BGAP   = Y_GRID  - H_GRID  / 2 - H_BGAP   / 2;
+    const Y_MGAP2  = Y_GRID  - H_GRID  / 2 - H_MGAP2  / 2;
+    const Y_GRID2  = Y_MGAP2 - H_MGAP2 / 2 - H_GRID2  / 2;
+    const Y_BGAP   = Y_GRID2 - H_GRID2 / 2 - H_BGAP   / 2;
 
     // ── Layer 1: Frame (뒤) ──
     const frameGeo = new THREE.BoxGeometry(FRAME_W, FRAME_H, D);
@@ -660,6 +378,95 @@
     gridGroup.add(gridGapBox);
     gridGapBox.add(new THREE.LineSegments(new THREE.EdgesGeometry(gridGapGeo), new THREE.LineBasicMaterial({ color: 0x555555 })));
 
+    // ── Mid Gap 2 Container ──
+    const gapGeo_m2 = new THREE.BoxGeometry(FRAME_W, H_MGAP2, D);
+    const gapContainer_m2 = new THREE.Mesh(gapGeo_m2, makeGapMats());
+    gapContainer_m2.position.set(0, Y_MGAP2, GAP + D/2);
+    scene.add(gapContainer_m2); addEdge(gapContainer_m2, gapGeo_m2);
+
+    // ── Grid 2×2 Container ──
+    const CELL2_W = FRAME_W / 2;
+    const CELL2_H = H_GRID2 / 2;
+    const CELL2_X = FRAME_W / 4;
+
+    const gridGroup2 = new THREE.Group();
+    gridGroup2.position.set(0, Y_GRID2, GAP + D/2);
+    scene.add(gridGroup2);
+
+    const grid2Geo = new THREE.BoxGeometry(FRAME_W, H_GRID2, D);
+    const grid2Mesh = new THREE.Mesh(grid2Geo, makeGapMats());
+    gridGroup2.add(grid2Mesh);
+    grid2Mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(grid2Geo), new THREE.LineBasicMaterial({ color: 0x222222 })));
+
+    function makeCell2(xPos, yPos) {
+      const geo = new THREE.BoxGeometry(CELL2_W, CELL2_H, D);
+      const mesh = new THREE.Mesh(geo,
+        new THREE.MeshLambertMaterial({ color: 0xdbeafe, transparent: true, opacity: 0.55 }));
+      mesh.position.set(xPos, yPos, CELL_Z);
+      gridGroup2.add(mesh);
+      mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0x3b82f6 })));
+      return mesh;
+    }
+
+    const cell2TL = makeCell2(-CELL2_X, +CELL2_H / 2);
+    const cell2TR = makeCell2(+CELL2_X, +CELL2_H / 2);
+    const cell2BL = makeCell2(-CELL2_X, -CELL2_H / 2);
+    const cell2BR = makeCell2(+CELL2_X, -CELL2_H / 2);
+
+    // ── Grid 2×2 열 갭박스 — 상단 행 / 하단 행 각각 ──
+    function makeHGapBox() {
+      const geo = new THREE.BoxGeometry(1, 1, D);
+      const mesh = new THREE.Mesh(geo, makeGapMats());
+      mesh.visible = false;
+      gridGroup2.add(mesh);
+      mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0x555555 })));
+      return mesh;
+    }
+    const grid2HGapTop = makeHGapBox();
+    const grid2HGapBot = makeHGapBox();
+
+    // ── Grid 2×2 세로 갭박스 (행 사이, 가로 바) ──
+    const grid2VGapGeo = new THREE.BoxGeometry(1, 1, D);
+    const grid2VGapBox = new THREE.Mesh(grid2VGapGeo, makeGapMats());
+    grid2VGapBox.position.set(0, 0, CELL_Z);
+    grid2VGapBox.visible = false;
+    gridGroup2.add(grid2VGapBox);
+    grid2VGapBox.add(new THREE.LineSegments(new THREE.EdgesGeometry(grid2VGapGeo), new THREE.LineBasicMaterial({ color: 0x555555 })));
+
+    // ── Grid 2×2 패딩 블록 ──
+    const grid2PadMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.25 });
+    const grid2PadLeft  = new THREE.Mesh(new THREE.BoxGeometry(1, 1, D), grid2PadMat);
+    const grid2PadRight = new THREE.Mesh(new THREE.BoxGeometry(1, 1, D), grid2PadMat.clone());
+    [grid2PadLeft, grid2PadRight].forEach(m => {
+      m.visible = false; m.position.set(0, 0, CELL_Z); gridGroup2.add(m);
+      m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), new THREE.LineBasicMaterial({ color: 0x3b82f6 })));
+    });
+
+    let curGrid2Pad = 0, curGrid2HGap = 0, curGrid2VGap = 0;
+
+    function updateGrid2Cells() {
+      const p = curGrid2Pad, hg = curGrid2HGap, vg = curGrid2VGap;
+      const cellW = Math.max(1, (FRAME_W - 2*p - hg) / 2);
+      const cellH = Math.max(1, (H_GRID2 - vg) / 2);
+      const sx = cellW / CELL2_W, sy = cellH / CELL2_H;
+      const lx = -FRAME_W/2 + p + cellW/2;
+      const rx =  FRAME_W/2 - p - cellW/2;
+      const ty =  vg/2 + cellH/2;
+      const by = -(vg/2 + cellH/2);
+      [cell2TL, cell2TR, cell2BL, cell2BR].forEach(c => c.scale.set(sx, sy, 1));
+      cell2TL.position.set(lx, ty, CELL_Z); cell2TR.position.set(rx, ty, CELL_Z);
+      cell2BL.position.set(lx, by, CELL_Z); cell2BR.position.set(rx, by, CELL_Z);
+      [grid2HGapTop, grid2HGapBot].forEach(b => { b.visible = hg > 0; b.scale.set(Math.max(0.01, hg), cellH, 1); });
+      grid2HGapTop.position.set(0, ty, CELL_Z);
+      grid2HGapBot.position.set(0, by, CELL_Z);
+      const vGapW = Math.max(0.01, FRAME_W - 2 * p);
+      grid2VGapBox.visible = vg > 0; grid2VGapBox.scale.set(vGapW, Math.max(0.01, vg), 1);
+      grid2PadLeft.scale.set(Math.max(0.01, p), H_GRID2, 1); grid2PadLeft.position.x  = -FRAME_W/2 + p/2;
+      grid2PadRight.scale.set(Math.max(0.01, p), H_GRID2, 1); grid2PadRight.position.x =  FRAME_W/2 - p/2;
+      grid2PadLeft.visible  = showPadBlocks && p > 0;
+      grid2PadRight.visible = showPadBlocks && p > 0;
+    }
+
     // ── Bottom Gap Container ──
     const gapGeo3 = new THREE.BoxGeometry(FRAME_W, H_BGAP, D);
     const gapContainer3 = new THREE.Mesh(gapGeo3, makeGapMats());
@@ -744,7 +551,7 @@
     floatText.add(ftPlane);
 
     // --- 패딩 슬라이더 (Layer 2 컨테이너 너비 조절) ---
-    const allContainers = [gapContainer, labelGroup, container, gapContainer2, assetContainer, gridGroup, gapContainer3];
+    const allContainers = [gapContainer, labelGroup, container, gapContainer2, assetContainer, gridGroup, gapContainer_m2, gridGroup2, gapContainer3];
 
     const padMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.25 });
     const padEdgeMat = new THREE.LineBasicMaterial({ color: 0x3b82f6 });
@@ -825,6 +632,7 @@ updatePadding();
       showPadBlocks = this.checked;
       updatePadding();
       updateGridCells();
+      updateGrid2Cells();
     });
 
     // --- Grid 1×2 좌우 패딩 ---
@@ -879,6 +687,22 @@ updatePadding();
       curGridGap = Number(this.value);
       document.getElementById('gridGapVal').textContent = curGridGap + 'px';
       updateGridCells();
+    });
+
+    document.getElementById('grid2PadSlider').addEventListener('input', function() {
+      curGrid2Pad = Number(this.value);
+      document.getElementById('grid2PadVal').textContent = curGrid2Pad + 'px';
+      updateGrid2Cells();
+    });
+    document.getElementById('grid2HGapSlider').addEventListener('input', function() {
+      curGrid2HGap = Number(this.value);
+      document.getElementById('grid2HGapVal').textContent = curGrid2HGap + 'px';
+      updateGrid2Cells();
+    });
+    document.getElementById('grid2VGapSlider').addEventListener('input', function() {
+      curGrid2VGap = Number(this.value);
+      document.getElementById('grid2VGapVal').textContent = curGrid2VGap + 'px';
+      updateGrid2Cells();
     });
 
     // --- 뷰 버튼 ---
@@ -941,7 +765,7 @@ updatePadding();
     function updatePropsPanel(item) {
       const propsContent = document.getElementById('propsContent');
       if (!item || !item.obj) {
-        propsContent.innerHTML = '<div class="prop-none">선택된 레이어 없음</div>';
+        propsContent.innerHTML = '<div class="empty-state">선택된 레이어 없음</div>';
         return;
       }
       const obj = item.obj;
@@ -959,20 +783,27 @@ updatePadding();
         d = p.depth  ? Math.round(p.depth) : (p.radiusTop != null ? Math.round(p.radiusTop * 2) + ' ⌀' : '—');
       }
       propsContent.innerHTML = `
-        <div style="font-size:12px;color:#fff;font-weight:bold;margin-bottom:6px;">${item.label}</div>
+        <div class="prop-title">${item.label}</div>
         <div class="prop-divider"></div>
-        <div class="sidebar-section-title" style="margin:6px 0 4px;">Position</div>
+        <div class="panel-section-title" style="margin:6px 0 4px;">Position</div>
         <div class="prop-grid">
           <div class="prop-item"><div class="prop-item-label">X</div><div class="prop-item-val">${Math.round(wp.x)}</div></div>
           <div class="prop-item"><div class="prop-item-label">Y</div><div class="prop-item-val">${Math.round(wp.y)}</div></div>
           <div class="prop-item"><div class="prop-item-label">Z</div><div class="prop-item-val">${Math.round(wp.z)}</div></div>
         </div>
-        <div class="sidebar-section-title" style="margin:8px 0 4px;">Size</div>
+        <div class="panel-section-title" style="margin:8px 0 4px;">Size</div>
         <div class="prop-grid">
           <div class="prop-item"><div class="prop-item-label">W</div><div class="prop-item-val">${w}</div></div>
           <div class="prop-item"><div class="prop-item-label">H</div><div class="prop-item-val">${h}</div></div>
           <div class="prop-item"><div class="prop-item-label">D</div><div class="prop-item-val">${d}</div></div>
         </div>`;
+    }
+
+    const ALL_CTRLS = ['ctrl-frame', 'ctrl-grid1', 'ctrl-grid2'];
+
+    function showCtrl(id) {
+      ALL_CTRLS.forEach(c => { document.getElementById(c).style.display = 'none'; });
+      if (id) document.getElementById(id).style.display = '';
     }
 
     function selectLayer(item, row) {
@@ -981,6 +812,7 @@ updatePadding();
         selectedItem = null;
         boxHelper.visible = false;
         updatePropsPanel(null);
+        showCtrl(null);
         return;
       }
       selectedItem = item;
@@ -992,6 +824,7 @@ updatePadding();
         boxHelper.visible = false;
       }
       updatePropsPanel(item);
+      showCtrl(item.ctrl || null);
     }
 
     // --- 레이어 패널 동적 빌드 (체크박스 토글) ---
@@ -1008,7 +841,9 @@ updatePadding();
         { label: 'Text',       depth: 1, obj: container },
         { label: 'Mid Gap',    depth: 1, obj: gapContainer2 },
         { label: 'Asset',      depth: 1, obj: assetContainer },
-        { label: 'Grid 1×2',   depth: 1, obj: gridGroup },
+        { label: 'Grid 1×2',   depth: 1, obj: gridGroup,      ctrl: 'ctrl-grid1' },
+        { label: 'Mid Gap 2',  depth: 1, obj: gapContainer_m2 },
+        { label: 'Grid 2×2',   depth: 1, obj: gridGroup2,     ctrl: 'ctrl-grid2' },
         { label: 'Bottom Gap', depth: 1, obj: gapContainer3 },
         { label: 'Layer 3 — Overlay', depth: 0, obj: null, dot: 'rgba(196,181,253,0.7)' },
         { label: 'Overlay',    depth: 1, obj: overlay, defaultVisible: false },
@@ -1016,7 +851,7 @@ updatePadding();
         { label: 'Float Circle', depth: 1, obj: floatMesh, defaultVisible: false },
         { label: 'Float Text',   depth: 1, obj: floatText, defaultVisible: false },
         { label: 'Layer 1 — Frame', depth: 0, obj: null, dot: '#e5e7eb' },
-        { label: 'Frame',      depth: 1, obj: frame },
+        { label: 'Frame',      depth: 1, obj: frame,          ctrl: 'ctrl-frame' },
       ];
 
       tree.forEach(item => {

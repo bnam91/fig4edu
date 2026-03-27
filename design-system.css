@@ -1,0 +1,333 @@
+/* ════════════════════════════════════════════════
+   Stack Preview — Design System  v2.0
+   ════════════════════════════════════════════════
+
+   토큰 네이밍 규칙
+   --color-{role}-{variant}
+   --sp-{step}          spacing scale
+   --radius-{size}      border-radius
+   --text-{size}        font-size
+   ════════════════════════════════════════════════ */
+
+/* ─── Design Tokens ──────────────────────────── */
+:root {
+  /* Background */
+  --color-bg-panel:        rgba(24, 24, 24, 0.92);
+  --color-bg-input:        rgba(255, 255, 255, 0.06);
+  --color-bg-btn:          rgba(255, 255, 255, 0.10);
+  --color-bg-btn-hover:    rgba(255, 255, 255, 0.18);
+  --color-bg-btn-active:   rgba(255, 255, 255, 0.28);
+
+  /* Border */
+  --color-border:          rgba(255, 255, 255, 0.08);
+  --color-border-ctrl:     rgba(255, 255, 255, 0.20);
+  --color-border-divider:  rgba(255, 255, 255, 0.07);
+
+  /* Text */
+  --color-text:            rgba(255, 255, 255, 1.00);
+  --color-text-sub:        rgba(255, 255, 255, 0.80);
+  --color-text-label:      rgba(255, 255, 255, 0.50);
+  --color-text-dim:        rgba(255, 255, 255, 0.40);
+  --color-text-faint:      rgba(255, 255, 255, 0.25);
+
+  /* Accent */
+  --color-accent:          #60a5fa;
+  --color-accent-bg:       rgba(96, 165, 250, 0.18);
+
+  /* Typography */
+  --font:       Arial, sans-serif;
+  --text-xs:    10px;
+  --text-sm:    11px;
+  --text-base:  12px;
+  --text-md:    13px;
+
+  /* Spacing (4px base unit) */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-6:  24px;
+
+  /* Radius */
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
+
+  /* Panel */
+  --panel-blur: blur(12px);
+}
+
+/* ─── Reset ──────────────────────────────────── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #888; overflow: hidden; font-family: var(--font); }
+canvas { display: block; }
+
+/* ─── Panel (dark glass card) ────────────────── */
+.panel {
+  background: var(--color-bg-panel);
+  backdrop-filter: var(--panel-blur);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  font-family: var(--font);
+  user-select: none;
+}
+
+.panel-header {
+  padding: var(--sp-4);
+  font-size: var(--text-sm);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  border-bottom: 1px solid var(--color-border-divider);
+}
+
+.panel-section {
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--color-border-divider);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-section-title {
+  font-size: var(--text-sm);
+  color: var(--color-text-label);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ─── Button ─────────────────────────────────── */
+.btn {
+  background: var(--color-bg-btn);
+  border: 1px solid var(--color-border-ctrl);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  padding: var(--sp-2) var(--sp-3);
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: center;
+  font-family: var(--font);
+}
+.btn:hover  { background: var(--color-bg-btn-hover); }
+.btn:active { background: var(--color-bg-btn-active); }
+
+/* small: 뷰 전환 버튼처럼 텍스트가 짧은 경우 */
+.btn--sm {
+  padding: var(--sp-2) var(--sp-1);
+  font-size: var(--text-sm);
+}
+
+/* icon: 줌 +/- 버튼 */
+.btn--icon {
+  padding: var(--sp-1) 0;
+  font-size: 16px;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+  flex: 1;
+}
+
+/* ─── Slider ─────────────────────────────────── */
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.20);
+  outline: none;
+  cursor: pointer;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-text);
+  cursor: pointer;
+}
+
+/* ─── Form Row ───────────────────────────────── */
+.prop-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prop-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-base);
+  color: var(--color-text-sub);
+}
+
+.prop-val {
+  color: var(--color-text);
+  font-weight: bold;
+  font-size: var(--text-base);
+}
+
+/* Properties 패널 레이어명 타이틀 */
+.prop-title {
+  font-size: var(--text-base);
+  color: var(--color-text);
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.prop-divider {
+  height: 1px;
+  background: var(--color-border-divider);
+  margin: 2px 0;
+}
+
+/* ─── Prop Grid (position / size 표시) ────────── */
+.prop-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.prop-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.prop-item-label {
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.5px;
+}
+
+.prop-item-val {
+  font-size: var(--text-base);
+  color: var(--color-text);
+  background: var(--color-bg-input);
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
+}
+
+/* ─── Checkbox Label ─────────────────────────── */
+.check-label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-base);
+  color: var(--color-text-sub);
+  cursor: pointer;
+  margin-top: var(--sp-1);
+}
+.check-label input[type="checkbox"] {
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+/* ─── Empty State ────────────────────────────── */
+.empty-state {
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+  text-align: center;
+  padding: var(--sp-2) 0;
+}
+
+/* ─── Divider ────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: var(--color-border-ctrl);
+}
+
+/* ─── Zoom Controls ──────────────────────────── */
+.zoom-btns {
+  display: flex;
+  gap: 6px;
+}
+
+/* ─── Layer Panel ────────────────────────────── */
+.layer-info {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.layer-section-head,
+.layer-row {
+  pointer-events: auto;
+}
+
+.layer-section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-base);
+  color: var(--color-text-sub);
+  font-family: var(--font);
+  margin-top: var(--sp-1);
+}
+
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-base);
+  color: var(--color-text-sub);
+  font-family: var(--font);
+}
+
+.layer-row {
+  display: flex;
+  align-items: center;
+  font-family: var(--font);
+  gap: 0;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.layer-row span { white-space: nowrap; }
+
+.layer-row.selected {
+  background: var(--color-accent-bg);
+  border-radius: var(--radius-sm);
+}
+
+.layer-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.layer-label {
+  color: var(--color-text-dim);
+  font-size: var(--text-sm);
+  margin-bottom: 2px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: var(--font);
+}
+
+.layer-cb {
+  width: 11px;
+  height: 11px;
+  margin-right: 5px;
+  cursor: pointer;
+  flex-shrink: 0;
+  accent-color: var(--color-accent);
+}
+
+/* ─── Hint Bar ───────────────────────────────── */
+.hint {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--color-text-dim);
+  font-size: var(--text-base);
+  letter-spacing: 1px;
+  pointer-events: none;
+}
